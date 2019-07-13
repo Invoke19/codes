@@ -1,0 +1,38 @@
+package l2f.gameserver.integrations;
+
+import l2f.gameserver.Announcements;
+import l2f.gameserver.integrations.TwitchRewardManager;
+
+/**
+ * @author Invoke
+ *
+ */
+public class TwitchRewardReminderTask implements Runnable
+{
+	private final String _username;
+	private final String reminderTemplate = "Our streamer %s is currently live with %s viewers. Go at %s to see him.";
+	private final String rewardReminderTemplate = "We are rewarding every online player when more than %s viewers are watching.";
+		
+	public TwitchRewardReminderTask(String username) 
+	{
+		_username = username;
+	}
+	
+	@Override
+	public void run()
+	{
+		String apiResponse = TwitchRewardManager.INSTANCE.getStreamForUser(_username);		
+		boolean streaming = TwitchRewardManager.INSTANCE.isStreaming(apiResponse);
+		
+		if(!streaming)
+			return;
+		
+		String streamUrl = TwitchRewardManager.INSTANCE.getChannelUrl(apiResponse);
+		String channelName = TwitchRewardManager.INSTANCE.getChannelName(apiResponse);
+		int viewerCount = TwitchRewardManager.INSTANCE.getViewerCount(apiResponse);
+		
+	Announcements.getInstance().announceToAll(String.format(reminderTemplate, channelName, viewerCount, streamUrl));
+	Announcements.getInstance().announceToAll(String.format(rewardReminderTemplate, TwitchRewardManager.INSTANCE.getViewersForReward()));
+	}
+	
+}
