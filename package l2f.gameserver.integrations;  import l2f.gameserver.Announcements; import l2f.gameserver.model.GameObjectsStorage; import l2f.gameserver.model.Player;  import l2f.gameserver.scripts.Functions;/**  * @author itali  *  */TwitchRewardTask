@@ -1,0 +1,52 @@
+package l2f.gameserver.integrations;
+
+import l2f.gameserver.Announcements;
+import l2f.gameserver.model.GameObjectsStorage;
+import l2f.gameserver.model.Player;
+
+import l2f.gameserver.scripts.Functions;
+
+
+
+/**
+ * @author itali
+ *
+ */
+public class TwitchRewardTask implements Runnable
+{
+	private final String _username;
+	private final String failureRewardTemplate = "Unfortunately not enought viewers were watching the stream. Current viewers %s. Needed viewers %s.";
+
+	
+	public TwitchRewardTask(String username) 
+	{
+		_username = username;
+	}
+	
+	@Override
+	public void run()
+	{
+		String apiResponse = TwitchRewardManager.INSTANCE.getStreamForUser(_username);		
+		boolean streaming = TwitchRewardManager.INSTANCE.isStreaming(apiResponse);
+		
+		if(!streaming)
+			return;
+		
+		int currentViewers = TwitchRewardManager.INSTANCE.getViewerCount(apiResponse);
+		int neededViewers = TwitchRewardManager.INSTANCE.getViewersForReward();
+		
+		int rewardId = TwitchRewardManager.INSTANCE.getRewardId();
+		int rewardCount = TwitchRewardManager.INSTANCE.getRewardCount();
+		
+			if (currentViewers >= (neededViewers ))				
+			{
+				Announcements.getInstance().announceToAll("Congratulations we hit the needed streaming views");				
+				for (Player player : GameObjectsStorage.getAllPlayers())		
+				Functions.addItem(player, rewardId, rewardCount, "");
+			}
+			else 
+			{
+				Announcements.getInstance().announceToAll(String.format(failureRewardTemplate, currentViewers, neededViewers));
+		}
+	}	
+}
